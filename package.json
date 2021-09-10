@@ -32,6 +32,9 @@
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0"
   },
+  "resolutions": {
+    "graphql": "15.4.0"
+  },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
     "@nestjs/schematics": "^8.0.0",

@@ -1,0 +1,77 @@
+version: '3.4'
+
+x-logging:
+  &default-logging
+  options:
+    max-size: '12m'
+    max-file: '5'
+  driver: json-file
+
+services:
+  postgis:
+    image: postgis/postgis:13-3.1-alpine
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - ./database/postgis/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+      - ./database/postgis/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: YOUR_DATABASE_USER
+      POSTGRES_PASSWORD: YOUR_PASSWORD
+      POSTGRES_DB: YOUR_DATABASE
+      
+  redis:
+    restart: always
+    logging: *default-logging
+    image: redis:6.2
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - 6379:6379
+    volumes:
+      - ./database/redis:/data
+    command: ["redis-server", "--requirepass", "YOUR_PASSWORD"]
+
+  parse:
+    depends_on: 
+      - postgis
+      - redis
+    restart: always
+    logging: *default-logging
+    image: nest-data-server
+    environment:
+      - TZ="CTS-8"
+      - NODE_ENV=production
+      - PARSE_SERVER_APPLICATION_ID=YOUR_APP_ID
+      - PARSE_SERVER_APP_NAME=YOUR_APP_NAME
+      - PARSE_SERVER_MASTER_KEY=YOUR_MASTER_KEY
+      - PARSE_SERVER_READ_ONLY_MASTER_KEY=YOUR_READ_ONLY_MASTER_KEY
+      - PARSE_SERVER_MOUNT_PATH=/parse
+      - PARSE_SERVER_DIRECT_ACCESS=true
+      - PARSE_SERVER_ENABLE_EXPERIMENTAL_DIRECT_ACCESS=true
+      - SERVER_URL=http://localhost:3000/parse
+      - PARSE_PUBLIC_SERVER_URL=http://localhost:3000/parse
+      - PARSE_SERVER_DATABASE_URI=postgres://YOUR_DATABASE_USER:YOUR_PASSWORD@postgis:5432/YOUR_DATABASE?stringtype=unspecified&timezone=Asia/Shanghai&application_name=parse
+      - PARSE_SERVER_ALLOW_CLIENT_CLASS_CREATION=true
+      - PARSE_SERVER_LOG_LEVEL=info
+      - PARSE_SERVER_LOGGER_ADAPTER={"module":"parse-server/lib/Adapters/Logger/WinstonLoggerAdapter","options":{"logsFolder":"./logs","jsonLogs":true,"logLevel":"verbose","silent":false,"maxLogFiles":6}}
+      - PARSE_SERVER_FILES_ADAPTER={"module":"@parse/fs-files-adapter","options":{"filesSubDirectory":"./YOUR_FILE_SUBDIR"}}
+      - PARSE_SERVER_FILE_KEY=YOUR_FILE_KEY
+      - PARSE_SERVER_LIVEQUERY_CLASSNAMES=GameScore
+      - PARSE_SERVER_MOUNT_GRAPHQL=true
+      - PARSE_SERVER_GRAPHQL_PATH=/graphql
+      - PARSE_SERVER_ALLOW_ORIGIN=*
+      - PARSE_DASHBOARD_MOUNTPATH=/dashboard
+      - PARSE_DASHBOARD_APP_NAME=YOUR_APP_NAME
+      - PARSE_DASHBOARD_USERNAME=admin
+      - PARSE_DASHBOARD_PASSWORD=admin
+      - PARSE_DASHBOARD_USERNAME_RO=guest
+      - PARSE_DASHBOARD_PASSWORD_RO=guest
+      - PARSE_DASHBOARD_PRIMARY_COLOR=green
+      # - PARSE_DASHBOARD_SECONDARY_COLOR=#ff00ff
+    volumes:
+      - ./files:/workspace/files
+      - ./logs:/workspace/logs
+    ports:
+      - "3000:3000"
