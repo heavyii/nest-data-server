@@ -99,6 +99,8 @@ PARSE_SERVER_MOUNT_PATH=/paaaarse
 SERVER_URL=http://localhost:3000/paaaarse
 PARSE_PUBLIC_SERVER_URL=http://localhost:3000/paaaarse
 
+PARSE_SERVER_FILES_ADAPTER={"module":"@parse/fs-files-adapter","options":{"filesSubDirectory":"YOUR_APP_NAME"}}
+
 PARSE_SERVER_ALLOW_ORIGIN=*
 
 PARSE_SERVER_MOUNT_GRAPHQL=true
@@ -121,3 +123,56 @@ yarn run start:dev
 
 open http://localhost:3000/dashboard to explore, username and password is admin/admin
 
+## docker-compose
+
+#### build docker image
+
+```shell
+sh build.sh
+docker-compose up -d postgis
+docker-compose up -d parse
+```
+
+* open http://localhost:3000/dashboard to explore, username and password is admin/admin
+
+
+## cloud code
+
+
+here we create a module name parse-cloud.
+we will put cloud code into a module in nest.
+
+```
+nest g module parse-cloud
+nest g service parse-cloud
+```
+
+### cloud job
+
+define cloud job by the global Parse instance.
+
+```
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { ParseCloudJob } from 'nest-parse-server';
+
+@Injectable()
+export class ParseCloudService implements OnModuleInit {
+
+    onModuleInit() {
+        Parse.Cloud.job("myJob", (request) =>  {
+            ​// params: passed in the job call
+            ​// message: a function to update the status message of the job object
+            ​const { params, message } = request;
+            ​message("I just started");
+        });
+    }
+
+    @ParseCloudJob('myJob2')
+    testAjob(request: Parse.Cloud.JobRequest<Parse.Cloud.Params>) {
+        ​// params: passed in the job call
+        ​// message: a function to update the status message of the job object
+        ​const { params, message } = request;
+        ​message("I just started");
+    }
+}
+```

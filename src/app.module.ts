@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ParseServerModule } from 'nest-parse-server';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ParseCloudModule } from './parse-cloud/parse-cloud.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true, cache: true }),
@@ -25,7 +26,8 @@ import { AppService } from './app.service';
         }
       },
       inject: [ConfigService],
-    })],
+    }),
+    ParseCloudModule],
   controllers: [AppController],
   providers: [AppService],
 })
